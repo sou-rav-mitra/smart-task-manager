@@ -9,14 +9,20 @@ function Dashboard(){
     const [tasks, setTasks]= useState([])
     const {user, logout}= useAuth()
 
-        const fetchTasks= async ()=>{
-            const response= await API.get('/tasks')
-            setTasks(response.data)
-        }
+    const fetchTasks= async ()=>{
+        const response= await API.get('/tasks')
+        setTasks(response.data)
+    }
 
     useEffect(()=>{
         fetchTasks()
     }, [])
+
+    const deleteTask= async (taskId)=>{
+        await API.delete('/tasks/'+ taskId)
+        fetchTasks();
+    }
+
 
     return(
         <div>
@@ -26,6 +32,7 @@ function Dashboard(){
                     <h3>{task.title}</h3>
                     <p>{task.notes}</p>
                     <p>{task.priority}</p>
+                    <button onClick={()=> deleteTask(task._id)}>Delete task</button>
                 </div>
             ))}
             <TaskForm onTaskAdded={fetchTasks} />

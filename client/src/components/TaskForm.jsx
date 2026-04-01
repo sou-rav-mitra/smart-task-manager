@@ -5,12 +5,16 @@ function TaskForm({onTaskAdded}){
     const [title, setTitle]= useState('')
     const [notes, setNotes]= useState('')
     const [deadline, setDeadline]= useState('')
-    const [priority, setPriority]= useState('')
+    const [priority, setPriority]= useState('low')
 
     const handleSubmit= async(e)=>{
         e.preventDefault()
         await API.post('/tasks', {title, notes, deadline, priority})
         onTaskAdded()
+        setTitle('')
+        setNotes('')
+        setDeadline('')
+        setPriority('low')
     }
 
     return (
