@@ -2,12 +2,22 @@ import {useState} from 'react'
 import {useEffect} from 'react'
 import API from '../api/axios'
 import {useAuth} from '../context/AuthContext'
+import {useNavigate} from 'react-router-dom'
 
 import TaskForm from '../components/TaskForm'
 
 function Dashboard(){
     const [tasks, setTasks]= useState([])
     const {user, logout}= useAuth()
+    const navigate= useNavigate()
+
+    //for editing tasks
+    const [editingTask, setEditingTask]= useState(null)
+    const [editTitle, setEditTitle] = useState('')
+    const [editNotes, setEditNotes] = useState('')
+    const [editPriority, setEditPriority] = useState('low')
+    const [editDeadline, setEditDeadline] = useState('')
+
 
     const fetchTasks= async ()=>{
         const response= await API.get('/tasks')
@@ -20,22 +30,65 @@ function Dashboard(){
 
     const deleteTask= async (taskId)=>{
         await API.delete('/tasks/'+ taskId)
-        fetchTasks();
+        fetchTasks()
     }
 
+
+    const handleLogout= ()=>{
+        logout()
+        navigate('/login')
+    }
+
+    const saveTask= async (taskId)=> {
+        await API.put('/tasks/'+ taskId, {
+            title: editTitle,
+            notes: editNotes,
+            priority: editPriority,
+            deadline: editDeadline
+        })
+        setEditingTask(null)
+        fetchTasks()
+    }
 
     return(
         <div>
             <h1>Welcome, {user?.name}</h1>
             {tasks.map((task)=>(
                 <div key={task._id}>
-                    <h3>{task.title}</h3>
-                    <p>{task.notes}</p>
-                    <p>{task.priority}</p>
-                    <button onClick={()=> deleteTask(task._id)}>Delete task</button>
+                    {editingTask?._id === task._id ? (
+                        //edit mode - shows inputs
+                        <div>
+                            <input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} />
+                            <input value={editNotes} onChange={(e) => setEditNotes(e.target.value)} />
+                            <input type="date" value={editDeadline} onChange={(e) => setEditDeadline(e.target.value)} />
+                            <select value={editPriority} onChange={(e) => setEditPriority(e.target.value)}>
+                                <option value="low">Low</option>
+                                <option value="medium">Medium</option>
+                                <option value="high">High</option>
+                            </select>
+                            <button onClick={()=> saveTask(task._id)}>Save</button>
+                            <button onClick={()=> setEditingTask(null)}>Cancel</button>
+                        </div>
+                    ) : (
+                        //normal mode - shows task info
+                        <div>
+                            <h3>{task.title}</h3>
+                            <p>{task.notes}</p>
+                            <p>{task.priority}</p>
+                            <button onClick={() => deleteTask(task._id)}>Delete</button>
+                            <button onClick={() => {
+                                setEditingTask(task)
+                                setEditTitle(task.title)
+                                setEditNotes(task.notes)
+                                setEditPriority(task.priority)
+                                setEditDeadline(task.deadline? task.deadline.slice(0,10) : '')
+                            }}>Edit</button>
+                        </div>
+                    )}
                 </div>
             ))}
             <TaskForm onTaskAdded={fetchTasks} />
+            <button onClick={handleLogout}>Logout</button>
         </div>
     )
 }

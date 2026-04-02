@@ -13,7 +13,6 @@ const getTasks= async(req, res)=>{
 
 const createTask = async (req, res) => {
     try{
-        console.log('createTask hit', req.body)
         let title= req.body.title;
         let notes= req.body.notes;
         let tags= req.body.tags;
