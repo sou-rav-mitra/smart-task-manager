@@ -50,6 +50,11 @@ function Dashboard(){
         fetchTasks()
     }
 
+    const toggleComplete= async (taskId, currentStatus)=>{
+        await API.put('/tasks/'+taskId, {completed: !currentStatus})
+        fetchTasks()
+    }
+
     return(
         <div>
             <h1>Welcome, {user?.name}</h1>
@@ -72,7 +77,12 @@ function Dashboard(){
                     ) : (
                         //normal mode - shows task info
                         <div>
-                            <h3>{task.title}</h3>
+                            <input 
+                                type="checkbox"
+                                checked={task.completed}
+                                onChange={()=> toggleComplete(task._id, task.completed)}
+                            />
+                            <h3 style={{ textDecoration: task.completed ? 'line-through' : 'none'}}>{task.title}</h3>
                             <p>{task.notes}</p>
                             <p>{task.priority}</p>
                             <button onClick={() => deleteTask(task._id)}>Delete</button>
