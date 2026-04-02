@@ -11,6 +11,10 @@ function Dashboard(){
     const {user, logout}= useAuth()
     const navigate= useNavigate()
 
+    //filter and search
+    const [search, setSearch]= useState('')
+    const [filterPriority, setFilterPriority]= useState('all')
+
     //for editing tasks
     const [editingTask, setEditingTask]= useState(null)
     const [editTitle, setEditTitle] = useState('')
@@ -55,10 +59,29 @@ function Dashboard(){
         fetchTasks()
     }
 
+    const filteredTasks= tasks.filter((task)=>{
+        const matchesSearch= task.title.toLowerCase().includes(search.toLowerCase())
+        const matchesPriority= filterPriority==='all' || task.priority===filterPriority
+        return matchesSearch && matchesPriority;
+    })
+
     return(
         <div>
             <h1>Welcome, {user?.name}</h1>
-            {tasks.map((task)=>(
+            <input 
+                type="text" 
+                placeholder='Search Tasks...'
+                value={search}   
+                onChange={(e)=> setSearch(e.target.value)} 
+            />
+            <select value={filterPriority} onChange={(e)=> setFilterPriority(e.target.value)}>
+                <option value="all">All Priorities</option>
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+            </select>
+
+            {filteredTasks.map((task)=>(
                 <div key={task._id}>
                     {editingTask?._id === task._id ? (
                         //edit mode - shows inputs
@@ -85,6 +108,7 @@ function Dashboard(){
                             <h3 style={{ textDecoration: task.completed ? 'line-through' : 'none'}}>{task.title}</h3>
                             <p>{task.notes}</p>
                             <p>{task.priority}</p>
+                            <p>{task.deadline ? task.deadline.slice(0, 10) : 'No deadline'}</p>
                             <button onClick={() => deleteTask(task._id)}>Delete</button>
                             <button onClick={() => {
                                 setEditingTask(task)
