@@ -1,0 +1,27 @@
+@import "tailwindcss";
+
+* {
+    font-family: 'Space Grotesk', sans-serif;
+}
+
+@keyframes gradientShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+.animated-bg {
+    background: linear-gradient(-45deg, #0a0a0f, #1a0533, #0d1b4b, #0a0a0f, #2d1b69, #0f0a2e);
+    background-size: 400% 400%;
+    animation: gradientShift 8s ease infinite;
+}
+
+:root {
+    --bg-primary: #000814;
+    --bg-card: #001D3D;
+    --bg-hover: #003566;
+    --accent: #FFC300;
+    --accent-light: #FFD60A;
+    --text-primary: #ffffff;
+    --text-secondary: #8892a4;
+}
