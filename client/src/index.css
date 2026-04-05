@@ -1,19 +1,27 @@
 @import "tailwindcss";
 
+html, body, #root {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    background-color: #05070f;
+}
+
 * {
     font-family: 'Space Grotesk', sans-serif;
 }
 
-@keyframes gradientShift {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
+button, [role="button"], select, input[type="checkbox"] {
+    cursor: pointer;
 }
 
-.animated-bg {
-    background: linear-gradient(-45deg, #0a0a0f, #1a0533, #0d1b4b, #0a0a0f, #2d1b69, #0f0a2e);
-    background-size: 400% 400%;
-    animation: gradientShift 8s ease infinite;
+.vanta-canvas {
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
 }
 
 :root {

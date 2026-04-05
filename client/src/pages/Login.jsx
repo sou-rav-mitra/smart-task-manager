@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import bgImage from "../assets/bgimg.jpg";
 
+
 import { useEffect, useRef } from "react";
 
 function Login() {
@@ -12,13 +13,25 @@ function Login() {
   const [password, setPassword] = useState("");
   const { login } = useAuth();
   const navigate = useNavigate();
+  const [error, setError] = useState('')
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    const response = await API.post("/auth/login", { email, password });
-    login(response.data.user, response.data.token);
-    navigate("/");
-  };
+    e.preventDefault()
+    setError('')
+
+    if (!email || !password) {
+        setError('All fields are required')
+        return
+    }
+
+    try {
+        const response = await API.post('/auth/login', { email, password })
+        login(response.data.user, response.data.token)
+        navigate('/')
+    } catch (error) {
+        setError(error.response?.data?.message || 'Something went wrong')
+    }
+}
 
   const vantaRef = useRef(null);
   const vantaEffect = useRef(null);
@@ -44,6 +57,13 @@ function Login() {
       ref={vantaRef}
       className="min-h-screen flex items-center justify-center relative overflow-hidden"
     >
+      {/* Top left logo */}
+      <div className="absolute top-6 left-8 z-20">
+        <h1 className="text-4xl font-bold" style={{ color: "#ffffff" }}>
+          Docket.
+        </h1>
+      </div>
+
       {/* Glass card */}
       <motion.div
         initial={{ opacity: 0, y: 40 }}
@@ -84,6 +104,12 @@ function Login() {
               border: "1px solid rgba(255, 255, 255, 0.1)",
             }}
           />
+
+            {error && (
+            <p className="text-sm text-center" style={{ color: "#ef4444" }}>
+              {error}
+            </p>
+          )}
 
           <motion.button
             initial={{
