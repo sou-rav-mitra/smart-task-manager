@@ -108,6 +108,11 @@ function Dashboard(){
                             <h3 style={{ textDecoration: task.completed ? 'line-through' : 'none'}}>{task.title}</h3>
                             <p>{task.notes}</p>
                             <p>{task.priority}</p>
+                            <div>
+                                {task.tags.map((tag, index) => (
+                                    <span key={index}>{tag}</span>
+                                ))}
+                            </div>
                             <p>{task.deadline ? task.deadline.slice(0, 10) : 'No deadline'}</p>
                             <button onClick={() => deleteTask(task._id)}>Delete</button>
                             <button onClick={() => {
