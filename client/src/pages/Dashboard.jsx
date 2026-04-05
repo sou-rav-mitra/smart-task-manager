@@ -14,6 +14,7 @@ function Dashboard(){
     //filter and search
     const [search, setSearch]= useState('')
     const [filterPriority, setFilterPriority]= useState('all')
+    const [filterTag, setFilterTag]= useState('')
 
     //for editing tasks
     const [editingTask, setEditingTask]= useState(null)
@@ -62,7 +63,8 @@ function Dashboard(){
     const filteredTasks= tasks.filter((task)=>{
         const matchesSearch= task.title.toLowerCase().includes(search.toLowerCase())
         const matchesPriority= filterPriority==='all' || task.priority===filterPriority
-        return matchesSearch && matchesPriority;
+        const matchesTag = filterTag === '' || task.tags.includes(filterTag)
+        return matchesSearch && matchesPriority && matchesTag;
     })
 
     return(
@@ -80,6 +82,12 @@ function Dashboard(){
                 <option value="medium">Medium</option>
                 <option value="high">High</option>
             </select>
+            
+            <input type="text"
+            placeholder='Filter by tag...' 
+            value={filterTag}
+            onChange={(e) => setFilterTag(e.target.value)}
+            />
 
             {filteredTasks.map((task)=>(
                 <div key={task._id}>
