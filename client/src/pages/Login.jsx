@@ -3,7 +3,6 @@ import API from "../api/axios";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import bgImage from "../assets/bgimg.jpg";
 
 
 import { useEffect, useRef } from "react";

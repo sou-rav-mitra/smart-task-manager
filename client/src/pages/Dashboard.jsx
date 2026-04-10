@@ -5,9 +5,24 @@ import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 
 import { useRef } from "react";
-import { motion } from 'framer-motion'
+import { motion } from 'framer-motion';
 
 import TaskForm from "../components/TaskForm";
+
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors
+} from '@dnd-kit/core'
+
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  arrayMove
+} from '@dnd-kit/sortable'
+import SortableTask from "../components/SortableTask";
 
 function Dashboard() {
   const [tasks, setTasks] = useState([]);
@@ -30,6 +45,14 @@ function Dashboard() {
   const vantaEffect = useRef(null);
   const [showModal, setShowModal] = useState(false);
 
+  const sensors= useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8
+      }
+    })
+  )
+
   useEffect(() => {
     vantaEffect.current = window.VANTA.HALO({
       el: vantaRef.current,
@@ -48,7 +71,8 @@ function Dashboard() {
 
   const fetchTasks = async () => {
     const response = await API.get("/tasks");
-    setTasks(response.data);
+    const sorted= response.data.sort((a,b)=> a.order-b.order)
+    setTasks(sorted)
   };
 
   useEffect(() => {
@@ -90,6 +114,26 @@ function Dashboard() {
     const matchesTag = filterTag === "" || task.tags.includes(filterTag);
     return matchesSearch && matchesPriority && matchesTag;
   });
+
+
+
+  const onDragEnd = async (event) => {
+    const { active, over } = event
+
+    if (!over || active.id === over.id) return
+
+    const oldIndex = tasks.findIndex(t => t._id === active.id)
+    const newIndex = tasks.findIndex(t => t._id === over.id)
+
+    const reordered = arrayMove(tasks, oldIndex, newIndex)
+    setTasks(reordered)
+
+    await Promise.all(
+        reordered.map((task, index) =>
+            API.put('/tasks/' + task._id, { order: index })
+        )
+    )
+}
 
   return (
     <div
@@ -210,17 +254,26 @@ function Dashboard() {
           </div>
 
           {/* Task list */}
-          <div className="flex flex-col gap-3 mb-8">
-            {filteredTasks.map((task) => (
-              <div
-                key={task._id}
-                className="p-4 rounded-xl transition-all"
-                style={{
-                  background: "rgba(10, 10, 30, 0.55)",
-                  backdropFilter: "blur(10px)",
-                  border: "1px solid rgba(255, 255, 255, 0.1)",
-                }}
-              >
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={onDragEnd}
+          >
+            <SortableContext
+              items={filteredTasks.map(task => task._id)}
+              strategy={verticalListSortingStrategy}
+            >
+            <div className="flex flex-col gap-3">
+              {filteredTasks.map((task) => (
+                <SortableTask key={task._id} id={task._id}>
+                    <div
+                        className="p-4 rounded-xl transition-all"
+                        style={{
+                            background: "rgba(10, 10, 30, 0.55)",
+                            backdropFilter: "blur(10px)",
+                            border: "1px solid rgba(255, 255, 255, 0.1)",
+                        }}
+                    >
                 {editingTask?._id === task._id ? (
                   <div className="flex flex-col gap-2">
                     <input
@@ -392,12 +445,15 @@ function Dashboard() {
                   </div>
                 )}
               </div>
+              </SortableTask>
             ))}
           </div>
-
-          
+          </SortableContext>     
+          </DndContext>
         </div>
       </div>
+
+
       {/* Fixed + button */}
       <motion.button
         initial={{
