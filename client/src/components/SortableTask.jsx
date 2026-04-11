@@ -1,23 +1,24 @@
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 
-function SortableTask({id, children}) {
-    const{
+function SortableTask({ id, children }) {
+    const {
         attributes,
         listeners,
         setNodeRef,
         transform,
         transition,
         isDragging
-    } = useSortable({id})
+    } = useSortable({ id })
 
-    const style={
+    const style = {
         transform: CSS.Transform.toString(transform),
-        transition, 
-        opacity: isDragging? 0.5 : 1,
+        transition,
+        opacity: isDragging ? 0.5 : 1,
+        touchAction: 'none',
     }
 
-    return(
+    return (
         <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
             {children}
         </div>
@@ -25,4 +26,3 @@ function SortableTask({id, children}) {
 }
 
 export default SortableTask
-
