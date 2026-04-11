@@ -80,9 +80,13 @@ function Dashboard() {
   }, []);
 
   const deleteTask = async (taskId) => {
-    await API.delete("/tasks/" + taskId);
-    fetchTasks();
-  };
+    setTasks(tasks.filter(task => task._id !== taskId))
+    try {
+        await API.delete('/tasks/' + taskId)
+    } catch (error) {
+        fetchTasks()
+    }
+}
 
   const handleLogout = () => {
     logout();
@@ -101,9 +105,22 @@ function Dashboard() {
   };
 
   const toggleComplete = async (taskId, currentStatus) => {
-    await API.put("/tasks/" + taskId, { completed: !currentStatus });
-    fetchTasks();
-  };
+    setTasks(tasks.map(task => 
+        task._id === taskId 
+            ? { ...task, completed: !currentStatus }
+            : task
+    ))
+    try {
+        await API.put('/tasks/' + taskId, { completed: !currentStatus })
+    } catch (error) {
+        // If server fails, revert the UI change
+        setTasks(tasks.map(task => 
+            task._id === taskId 
+                ? { ...task, completed: currentStatus }
+                : task
+        ))
+    }
+}
 
   const filteredTasks = tasks.filter((task) => {
     const matchesSearch = task.title
@@ -493,9 +510,9 @@ function Dashboard() {
             onClick={(e) => e.stopPropagation()}
         >
             <TaskForm onTaskAdded={() => {
-                fetchTasks()
-                setShowModal(false)
-            }} />
+              fetchTasks()
+              setShowModal(false)
+        }} />
         </motion.div>
     </motion.div>
 )}
