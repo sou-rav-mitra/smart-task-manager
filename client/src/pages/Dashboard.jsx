@@ -1,12 +1,10 @@
-import { useState } from "react";
-import { useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import API from "../api/axios";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { useRef } from "react";
 import { motion } from 'framer-motion';
 import TaskForm from "../components/TaskForm";
-import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
+import { DndContext, closestCenter, PointerSensor, TouchSensor, useSensor, useSensors } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable'
 import SortableTask from "../components/SortableTask";
 
@@ -26,10 +24,14 @@ function Dashboard() {
   const vantaEffect = useRef(null);
   const [showModal, setShowModal] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const isMobile = window.innerWidth < 768;
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: { distance: 8 }
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 250, tolerance: 5 }
     })
   )
 
@@ -51,8 +53,8 @@ function Dashboard() {
 
   const fetchTasks = async () => {
     const response = await API.get("/tasks");
-    const sorted = response.data.sort((a, b) => a.order - b.order)
-    setTasks(sorted)
+    const sorted = response.data.sort((a, b) => a.order - b.order);
+    setTasks(sorted);
   };
 
   useEffect(() => {
@@ -60,13 +62,13 @@ function Dashboard() {
   }, []);
 
   const deleteTask = async (taskId) => {
-    setTasks(tasks.filter(task => task._id !== taskId))
+    setTasks(tasks.filter(task => task._id !== taskId));
     try {
-      await API.delete('/tasks/' + taskId)
+      await API.delete('/tasks/' + taskId);
     } catch (error) {
-      fetchTasks()
+      fetchTasks();
     }
-  }
+  };
 
   const handleLogout = () => {
     logout();
@@ -87,15 +89,15 @@ function Dashboard() {
   const toggleComplete = async (taskId, currentStatus) => {
     setTasks(tasks.map(task =>
       task._id === taskId ? { ...task, completed: !currentStatus } : task
-    ))
+    ));
     try {
-      await API.put('/tasks/' + taskId, { completed: !currentStatus })
+      await API.put('/tasks/' + taskId, { completed: !currentStatus });
     } catch (error) {
       setTasks(tasks.map(task =>
         task._id === taskId ? { ...task, completed: currentStatus } : task
-      ))
+      ));
     }
-  }
+  };
 
   const filteredTasks = tasks.filter((task) => {
     const matchesSearch = task.title.toLowerCase().includes(search.toLowerCase());
@@ -105,26 +107,26 @@ function Dashboard() {
   });
 
   const onDragEnd = async (event) => {
-    const { active, over } = event
-    if (!over || active.id === over.id) return
-    const oldIndex = tasks.findIndex(t => t._id === active.id)
-    const newIndex = tasks.findIndex(t => t._id === over.id)
-    const reordered = arrayMove(tasks, oldIndex, newIndex)
-    setTasks(reordered)
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = tasks.findIndex(t => t._id === active.id);
+    const newIndex = tasks.findIndex(t => t._id === over.id);
+    const reordered = arrayMove(tasks, oldIndex, newIndex);
+    setTasks(reordered);
     await Promise.all(
       reordered.map((task, index) =>
         API.put('/tasks/' + task._id, { order: index })
       )
-    )
-  }
+    );
+  };
 
   return (
     <div ref={vantaRef} className="flex min-h-screen" style={{ backgroundColor: "transparent" }}>
 
       {sidebarOpen && (
         <div
-          className="fixed inset-0 z-30 md:hidden"
-          style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
+          className="fixed inset-0 z-30"
+          style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}
           onClick={() => setSidebarOpen(false)}
         />
       )}
@@ -132,22 +134,26 @@ function Dashboard() {
       <div className="flex w-full" style={{ zIndex: 1, position: "relative" }}>
 
         <div
-          className="w-64 flex flex-col justify-between p-6 shrink-0 fixed md:sticky top-0 h-screen z-40 transition-all duration-300"
+          className="w-64 flex flex-col justify-between p-6 shrink-0 h-screen z-40 transition-all duration-300"
           style={{
             backgroundColor: "rgba(13, 13, 26, 0.95)",
             backdropFilter: "blur(12px)",
             borderRight: "1px solid rgba(255,255,255,0.06)",
             overflowY: "auto",
-            transform: sidebarOpen ? 'translateX(0)' : undefined,
+            position: isMobile ? 'fixed' : 'sticky',
+            top: 0,
             left: 0,
+            transform: isMobile ? (sidebarOpen ? 'translateX(0)' : 'translateX(-100%)') : 'translateX(0)',
           }}
         >
-          <div
-            className="md:hidden absolute top-4 right-4 text-white text-xl cursor-pointer"
-            onClick={() => setSidebarOpen(false)}
-          >
-            ✕
-          </div>
+          {isMobile && (
+            <div
+              className="absolute top-4 right-4 text-white text-xl"
+              onClick={() => setSidebarOpen(false)}
+            >
+              ✕
+            </div>
+          )}
 
           <div>
             <h1 className="text-4xl font-bold mb-10" style={{ color: "#ffffff" }}>
@@ -160,7 +166,7 @@ function Dashboard() {
               {["all", "low", "medium", "high"].map((p) => (
                 <button
                   key={p}
-                  onClick={() => { setFilterPriority(p); setSidebarOpen(false); }}
+                  onClick={() => { setFilterPriority(p); if (isMobile) setSidebarOpen(false); }}
                   className="text-left px-3 py-2 rounded-lg text-sm capitalize transition-all"
                   style={{
                     backgroundColor: filterPriority === p ? "rgba(124, 58, 237, 0.2)" : "transparent",
@@ -188,35 +194,47 @@ function Dashboard() {
             />
           </div>
 
-          <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }} className="pt-4">
-            <p className="text-sm font-medium text-white mb-3">{user?.name}</p>
-            <button
-              onClick={handleLogout}
-              className="text-sm px-3 py-2 rounded-lg w-full text-left transition-all"
-              style={{ color: "#6b7280" }}
-              onMouseEnter={(e) => (e.target.style.color = "#ef4444")}
-              onMouseLeave={(e) => (e.target.style.color = "#6b7280")}
-            >
-              Logout
-            </button>
+          <div>
+            <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }} className="pt-4 mb-4">
+              <p className="text-sm font-medium text-white mb-3">{user?.name}</p>
+              <button
+                onClick={handleLogout}
+                className="text-sm px-3 py-2 rounded-lg w-full text-left transition-all"
+                style={{ color: "#6b7280" }}
+                onMouseEnter={(e) => (e.target.style.color = "#ef4444")}
+                onMouseLeave={(e) => (e.target.style.color = "#6b7280")}
+              >
+                Logout
+              </button>
+            </div>
+            <div style={{ borderTop: "1px solid rgba(255,255,255,0.04)" }} className="pt-4">
+              <p className="text-xs leading-relaxed" style={{ color: "#374151" }}>
+                © 2026 Sourav. All rights reserved.
+              </p>
+              <p className="text-xs mt-1" style={{ color: "#374151" }}>
+                Built with ♥ using the MERN stack.
+              </p>
+            </div>
           </div>
         </div>
 
-        <div className="flex-1 p-4 md:p-8 overflow-y-auto md:ml-0 ml-0">
+        <div className="flex-1 p-4 md:p-8 overflow-y-auto">
 
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
-              <button
-                className="md:hidden text-white text-2xl"
-                onClick={() => setSidebarOpen(true)}
-              >
-                ☰
-              </button>
+              {isMobile && (
+                <button
+                  className="text-white text-2xl"
+                  onClick={() => setSidebarOpen(true)}
+                >
+                  ☰
+                </button>
+              )}
               <h2 className="text-xl md:text-2xl font-semibold text-white">My Tasks</h2>
             </div>
             <input
               type="text"
-              placeholder="Search tasks..."
+              placeholder="Search..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="px-3 py-2 rounded-lg text-sm outline-none"
@@ -224,9 +242,16 @@ function Dashboard() {
                 backgroundColor: "rgba(255,255,255,0.05)",
                 border: "1px solid rgba(255,255,255,0.08)",
                 color: "#ffffff",
-                width: "160px",
+                width: isMobile ? "130px" : "260px",
               }}
             />
+          </div>
+
+          <div className="mb-4 px-3 py-2 rounded-lg flex items-center gap-2"
+            style={{ backgroundColor: "rgba(124, 58, 237, 0.08)", border: "1px solid rgba(124, 58, 237, 0.15)" }}>
+            <span style={{ color: "#a78bfa", fontSize: "12px" }}>
+              {isMobile ? "✦ Hold a task for 1 second to drag and reorder" : "✦ Drag any task to reorder"}
+            </span>
           </div>
 
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
@@ -370,6 +395,12 @@ function Dashboard() {
               </div>
             </SortableContext>
           </DndContext>
+
+          {filteredTasks.length === 0 && (
+            <div className="text-center mt-16">
+              <p className="text-sm" style={{ color: "#4b5563" }}>No tasks yet. Hit + to add one.</p>
+            </div>
+          )}
         </div>
       </div>
 
@@ -401,8 +432,8 @@ function Dashboard() {
             onClick={(e) => e.stopPropagation()}
           >
             <TaskForm onTaskAdded={() => {
-              setShowModal(false)
-              fetchTasks()
+              setShowModal(false);
+              fetchTasks();
             }} />
           </motion.div>
         </motion.div>
